@@ -43,7 +43,9 @@ api.interceptors.response.use(
 
         if (!refreshToken) {
           state.logout();
-          window.location.href = '/login';
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+          }
           return Promise.reject(error);
         }
 
@@ -59,7 +61,9 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         useAuthStore.getState().logout();
-        window.location.href = '/login';
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       }
     }
