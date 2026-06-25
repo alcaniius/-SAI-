@@ -5,27 +5,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Leaf, 
-  ShieldCheck, 
-  GraduationCap, 
-  BarChart3,
-  LogOut,
-  Menu,
-  X
-} from 'lucide-react';
+import { LogOut, Menu, X } from 'lucide-react';
 import { useState } from 'react';
-
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Documentos', href: '/dashboard/documents', icon: FileText },
-  { name: 'Ambiental', href: '/dashboard/environmental', icon: Leaf },
-  { name: 'Calidad', href: '/dashboard/quality', icon: ShieldCheck },
-  { name: 'Educativo', href: '/dashboard/education', icon: GraduationCap },
-  { name: 'Indicadores', href: '/dashboard/indicators', icon: BarChart3 },
-];
+import { navigation, filterNavigationByRole } from '@/lib/navigation';
 
 export default function DashboardLayout({
   children,
@@ -36,6 +18,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const { user, isAuthenticated, isInitialized, logout } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const visibleNavigation = filterNavigationByRole(navigation, user?.role);
 
   useEffect(() => {
     if (isInitialized && !isAuthenticated) {
@@ -92,7 +75,7 @@ export default function DashboardLayout({
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 overflow-y-auto">
-            {navigation.map((item) => {
+            {visibleNavigation.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link
