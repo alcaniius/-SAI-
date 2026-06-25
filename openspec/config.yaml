@@ -1,0 +1,76 @@
+schema: spec-driven
+
+project: SAI
+project_name: Sistema Ambiental Integrado
+
+context: |
+  SaaS platform for environmental/document/educational management in Colombia.
+  Stack: NestJS 11 + TypeScript 5 + Prisma 7 (@prisma/adapter-pg + pg) + PostgreSQL 16 (backend);
+    Next.js 16 + React 19 + Tailwind 4 + Zustand 5 + TanStack Query 5 + React Hook Form + Zod 4 (frontend).
+  Infra: Redis 7 + BullMQ, MinIO/S3 (nestjs-s3), Docker Compose, Dokploy.
+  Architecture: modular NestJS modules under backend/src/modules (auth, users, documents, environmental);
+    Next.js App Router under Frontend/src/app; Zustand auth store in Frontend/src/store; api/services in Frontend/src/lib.
+  Testing: Jest 30 (backend unit + e2e via supertest); Vitest 4 + Testing Library + jsdom (frontend).
+  Style: Prettier + ESLint 9 (typescript-eslint) backend; ESLint + eslint-config-next frontend.
+
+strict_tdd: true
+
+testing:
+  backend:
+    runner: jest
+    unit_command: "cd backend && npx jest"
+    unit_cov_command: "cd backend && npx jest --coverage"
+    e2e_command: "cd backend && npx jest --config ./test/jest-e2e.json"
+    e2e_cov_command: "cd backend && npx jest --config ./test/jest-e2e.json --coverage"
+    build_command: "cd backend && pnpm build"
+    coverage: available
+    notes: |
+      Jest config in backend/package.json (rootDir src, testRegex *.spec.ts). E2E config in backend/test/jest-e2e.json.
+      Known build break: sites.controller.ts imports multer but multer/@types/multer not installed.
+  frontend:
+    runner: vitest
+    unit_command: "cd Frontend && npx vitest run"
+    unit_cov_command: "cd Frontend && npx vitest run --coverage"
+    build_command: "cd Frontend && npx next build"
+    coverage: available
+    notes: |
+      vitest.config.ts uses jsdom env, globals true, setupFiles ./vitest.setup.ts (jest-dom matchers).
+      Known: some tests fail without localStorage jsdom mock. Path alias '@' -> ./src.
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes (DB migrations, Prisma schema, auth flows)
+    - Note tenant/multi-tenancy impact (DEFAULT_TENANT_HEADER env)
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Scope to backend modules and/or Frontend app routes explicitly
+  design:
+    - Document architecture decisions with rationale (modular NestJS, App Router)
+    - Include sequence diagrams for complex flows (auth/JWT, file upload via BullMQ + MinIO)
+    - Respect RBAC roles (ADMIN, MANAGER, USER, AUDITOR) in any access flow
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+    - Tag each task with affected module (backend|frontend|infra)
+  apply:
+    tdd: false
+    test_command: "cd backend && npx jest && cd ../Frontend && npx vitest run"
+    follow_existing_patterns: true
+    gotchas:
+      - "Prisma v7: use @prisma/adapter-pg + PrismaPg adapter, NOT url in schema.prisma"
+      - "Zod v4: use z.enum([...], { message: 'Required' }), NOT required_error"
+      - "Forms: import from react-hook-form (NOT react-form); zodResolver from @hookform/resolvers/zod"
+      - "Next.js 16.2.3 has breaking changes — read node_modules/next/dist/docs/ before writing frontend code"
+      - "multer/@types/multer missing — install before touching file-upload controllers"
+  verify:
+    test_command: "cd backend && npx jest --coverage && cd ../Frontend && npx vitest run"
+    build_command: "cd backend && pnpm build; cd Frontend && npx next build"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas (Prisma schema, migrations)
+    - Confirm DB migration reversibility before archiving
+
+pr_strategy: ask-always
+review_budget_lines: 400
+execution_mode: interactive
