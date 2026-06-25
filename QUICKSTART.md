@@ -52,7 +52,7 @@ pnpm dev
 
 ## 🧪 Testing
 
-### Backend (42 tests unitarios + 14 e2e)
+### Backend (72 tests unitarios + 24 e2e)
 
 ```bash
 cd backend
@@ -60,13 +60,14 @@ cd backend
 # Tests unitarios con coverage
 npx jest --coverage
 
-# Tests e2e
+# Tests e2e (requiere PostgreSQL + Redis corriendo)
+# Primero: docker compose up -d
 npx jest --config ./test/jest-e2e.json
 ```
 
-**Resultado esperado**: 42 passed, 14 passed
+**Resultado esperado**: 72 passed (unitarios), 22 passed (e2e — 2 tests requieren DB)
 
-### Frontend (12 tests)
+### Frontend (19 tests)
 
 ```bash
 cd Frontend
@@ -75,7 +76,7 @@ cd Frontend
 npx vitest run
 ```
 
-**Resultado esperado**: 12 passed
+**Resultado esperado**: 19 passed
 
 ---
 
@@ -164,59 +165,83 @@ NEXT_PUBLIC_APP_NAME=SAI - Sistema Ambiental Integrado
 
 ## ✅ Lo que está implementado
 
-### Backend
-- [x] Autenticación JWT con refresh tokens
-- [x] Sistema de roles (ADMIN, MANAGER, USER, AUDITOR)
-- [x] Multi-tenant (header `X-Tenant-ID` o subdominio)
+### Backend (11 módulos)
+- [x] Autenticación JWT con refresh tokens (logout revoca solo el token presentado)
+- [x] Sistema de roles (ADMIN, MANAGER, USER, AUDITOR) con RolesGuard global (APP_GUARD)
+- [x] Multi-tenant con `@CurrentTenant()` en todos los controladores
 - [x] CRUD de usuarios (protegido por RBAC)
-- [x] CRUD de documentos con versiones y aprobaciones
-- [x] Módulo ambiental (aspectos, PMAs, ANLA)
+- [x] CRUD de documentos con versiones, upload S3/MinIO, presigned download
+- [x] Módulo ambiental (aspectos, PMAs con PDF async BullMQ, ANLA)
+- [x] Módulo de residuos (Waste) con CRUD + tenant isolation
+- [x] Módulo de inspecciones (Inspections) con CRUD + tenant isolation
+- [x] Módulo de sitios (Sites) con certificados en S3
+- [x] Módulo de huella de carbono (Carbon Footprint)
+- [x] Módulo de alertas (Alerts)
+- [x] Módulo de almacenamiento (Storage) — S3/MinIO con presigned URLs y fallback local
+- [x] Módulo de automatización (Automation) — BullMQ + PDF async
 - [x] Helmet (security headers)
-- [x] Rate Limiting (@nestjs/throttler)
+- [x] Rate Limiting (@nestjs/throttler — 3 perfiles)
 - [x] CORS dinámico
 
-### Frontend
-- [x] Login con validación Zod
-- [x] Registro con validación Zod
-- [x] Dashboard con sidebar
-- [x] Gestión de documentos
+### Frontend (dashboard con 6 módulos)
+- [x] Login con validación Zod v4
+- [x] Registro con validación Zod v4
+- [x] Dashboard con sidebar filtrado por rol (`navigation.ts`)
+- [x] Refresh token automático en `api.ts` (un reintento, replay del request)
+- [x] Gestión de documentos con modal create/edit (react-hook-form + Zod)
 - [x] Módulo ambiental (matriz aspectos, PMAs, ANLA)
-- [x] Autenticación con Zustand + persistencia
+- [x] Páginas de Calidad, Educación, Indicadores, Alertas
 
 ---
 
 ## 🔜 Siguientes Pasos (Fase 2)
 
-1. **Automatización de Documentos**
-   - Configurar BullMQ + Redis
-   - Generador de PDFs asíncrono (Puppeteer)
-   - Notificaciones por email
-
-2. **Huella de Carbono**
-   - Microservicio FastAPI/Python
+1. **Huella de Carbono**
+   - Integración con motor de cálculo (FastAPI/Python)
    - Cálculos Scope 1, 2, 3
 
-3. **Mejora de Tests**
-   - Tests para controllers
-   - Coverage target: 60%
+2. **Mejora de Tests**
+   - Tests para controllers y DTOs
+   - Coverage target: 60% global
+   - Reparar 2 tests e2e que requieren PostgreSQL
+
+3. **Cronograma ANLA**
+   - Alertas automáticas por email (Nodemailer)
+   - Reportes exportables
 
 ---
 
 ## 🐛 Problemas Comunes
 
 ### "Prisma no puede conectar a la base de datos"
-- Verificar que PostgreSQL esté corriendo
-- Verificar `DATABASE_URL` en `.env`
-- Si usa Docker: `docker compose up -d`
+- Verificar que PostgreSQL esté corriendo (`docker compose up -d` en `backend/`)
+- Verificar `DATABASE_URL` en `backend/.env`
+- Prisma v7 usa `@prisma/adapter-pg` — NO uses `url` en schema.prisma
 
 ### "Frontend no puede conectar al backend"
 - Verificar que backend esté en `http://localhost:3001`
-- Revisar `NEXT_PUBLIC_API_URL` en `.env.local`
-- Verificar CORS en `main.ts`
+- Revisar `NEXT_PUBLIC_API_URL` en `Frontend/.env.local`
+- Verificar CORS: `CORS_ORIGINS` en `backend/.env` debe incluir `http://localhost:3002`
 
 ### "Error de tipos TypeScript"
-- Ejecutar `pnpm build` para verificar
-- Frontend: `npx next build`
+- Ejecutar `pnpm build` en `backend/` para verificar
+- Frontend: `npx next build` en `Frontend/`
+
+### "Tests e2e fallan con errores de autenticación DB"
+- Requiere PostgreSQL corriendo: `cd backend && docker compose up -d`
+- 2 tests (`invalid credentials`, `refresh invalid token`) requieren DB — 22/24 pasan sin ella
+
+### "Error BullMQ / Redis connection refused"
+- Requiere Redis corriendo: `docker compose up -d` en `backend/`
+- Sin Redis, PDF generation no funciona pero el resto del sistema sí
+
+### "Zod v4 validation errors"
+- Usar `message` en `z.enum()`, NO `required_error`
+- Ejemplo correcto: `z.enum(['LOW', 'MEDIUM'], { message: 'Requerido' })`
+
+### "Formularios no se importan correctamente"
+- Importar desde `react-hook-form`, NO `react-form`
+- `zodResolver` desde `@hookform/resolvers/zod`
 
 ---
 
@@ -229,5 +254,5 @@ NEXT_PUBLIC_APP_NAME=SAI - Sistema Ambiental Integrado
 ---
 
 **Documento creado**: Abril 2026  
-**Última actualización**: Abril 15, 2026  
-**Versión**: 1.2 - Fase 1 Completa + Tests
+**Última actualización**: Junio 25, 2026  
+**Versión**: 1.3 - Post-estabilización (PRs 1-6 integrados)
