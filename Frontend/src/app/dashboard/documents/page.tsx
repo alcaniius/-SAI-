@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { documentsService } from '@/lib/services';
+import { documentsService, CreateDocumentInput, Document } from '@/lib/services';
+import { DocumentModal } from '@/components/documents/DocumentModal';
 import { Plus, FileText, Calendar, User, CheckCircle, XCircle, Clock } from 'lucide-react';
 
 const statusColors: Record<string, string> = {
@@ -24,10 +25,29 @@ const statusIcons: Record<string, React.ReactNode> = {
 export default function DocumentsPage() {
   const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingDocument, setEditingDocument] = useState<Document | null>(null);
 
   const { data: documents, isLoading } = useQuery({
     queryKey: ['documents'],
     queryFn: () => documentsService.getAll(),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: ({ data, file }: { data: CreateDocumentInput; file?: File }) =>
+      documentsService.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      setShowCreateModal(false);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<CreateDocumentInput> }) =>
+      documentsService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      setEditingDocument(null);
+    },
   });
 
   const deleteMutation = useMutation({
@@ -36,6 +56,14 @@ export default function DocumentsPage() {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
     },
   });
+
+  const handleSubmit = async (data: CreateDocumentInput, file?: File) => {
+    if (editingDocument) {
+      await updateMutation.mutateAsync({ id: editingDocument.id, data });
+    } else {
+      await createMutation.mutateAsync({ data, file });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -119,6 +147,12 @@ export default function DocumentsPage() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                   <button className="text-blue-600 hover:text-blue-900">Ver</button>
                   <button
+                    onClick={() => setEditingDocument(doc)}
+                    className="text-blue-600 hover:text-blue-900"
+                  >
+                    Editar
+                  </button>
+                  <button
                     onClick={() => deleteMutation.mutate(doc.id)}
                     className="text-red-600 hover:text-red-900"
                   >
@@ -143,6 +177,16 @@ export default function DocumentsPage() {
           </div>
         )}
       </div>
+
+      <DocumentModal
+        isOpen={showCreateModal || !!editingDocument}
+        onClose={() => {
+          setShowCreateModal(false);
+          setEditingDocument(null);
+        }}
+        onSubmit={handleSubmit}
+        document={editingDocument}
+      />
     </div>
   );
 }
