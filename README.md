@@ -20,21 +20,28 @@
 
 ### ✅ Fase 1 - Fundamentos (COMPLETADA)
 - [x] Infraestructura base (NestJS + Next.js)
-- [x] Autenticación JWT + RBAC
-- [x] Sistema multi-tenant
-- [x] Módulo de Gestión Documental
-- [x] Frontend: Login, Registro, Dashboard
-- [x] Frontend: Interfaz de gestión documental
+- [x] Autenticación JWT + RBAC global (RolesGuard como APP_GUARD)
+- [x] Sistema multi-tenant con `@CurrentTenant()` en todos los controladores
+- [x] Módulo de Gestión Documental con almacenamiento S3/MinIO
+- [x] Frontend: Login, Registro, Dashboard con sidebar filtrado por rol
+- [x] Frontend: Interfaz de gestión documental con modal create/edit
 - [x] Docker Compose para desarrollo local
 - [x] Configuración para Dokploy
-- [x] **Seguridad**: Helmet, Rate Limiting, CORS dinámico
-- [x] **Testing**: 42 tests unitarios + 14 e2e (backend), 12 tests (frontend)
+- [x] **Seguridad**: Helmet, Rate Limiting (3 perfiles), CORS dinámico, ValidationPipe global
+- [x] **RBAC**: Global via `APP_GUARD`, `@Public()` para auth/health, `AUDITOR` solo lectura, frontend sidebar filtrado
+- [x] **Testing**: 72 tests unitarios + 24 e2e (backend), 19 tests (frontend)
 
-### 🔄 Fase 2 - Núcleo Ambiental (EN PROGRESO)
+### 🔄 Fase 2 - Núcleo Ambiental (ESTABILIZADA)
 - [x] Matriz de aspectos e impactos (backend + frontend)
 - [x] API de PMAs y Reportes ANLA
 - [x] Generación automática de PMA (PDF async con BullMQ + pdf-lib)
-- [ ] Huella de carbono (FastAPI)
+- [x] Módulo de almacenamiento S3/MinIO (`StorageService`) con presigned URLs
+- [x] Almacenamiento de documentos y certificados de sitio en S3
+- [x] Módulo de residuos (Waste)
+- [x] Módulo de inspecciones (Inspections)
+- [x] Módulo de alertas (Alerts)
+- [x] Módulo de huella de carbono (Carbon Footprint) — estructura backend
+- [ ] Huella de carbono: integración FastAPI/Python
 - [ ] Cronograma de reportes ANLA con alertas (Nodemailer)
 
 ### 🔄 Fase 3 - App Móvil (PENDIENTE)
@@ -44,6 +51,7 @@
 - [ ] Informes de campo
 
 ### 🔄 Fase 4 - LMS y Calidad (PENDIENTE)
+- [x] Modelos de datos en schema.prisma (Course, Audit, NonConformity, Certificate)
 - [ ] Cursos y evaluaciones
 - [ ] Certificados QR
 - [ ] Auditorías
@@ -51,7 +59,7 @@
 
 ### 🔄 Fase 5 - Dashboard y Automatización (PENDIENTE)
 - [ ] Panel en tiempo real (WebSockets)
-- [ ] Alertas automátas
+- [ ] Alertas automáticas
 - [ ] Búsqueda Elasticsearch
 - [ ] Generación avanzada de documentos
 
@@ -133,60 +141,84 @@
 ### ✅ RBAC (Roles-Based Access Control)
 | Endpoint | ADMIN | MANAGER | USER | AUDITOR |
 |----------|-------|---------|------|---------|
-| `/auth/*` | ✅ | ✅ | ✅ | ✅ |
+| `/health`, `/auth/*` | ✅ Público | ✅ Público | ✅ Público | ✅ Público |
 | `/users` | CRUD | Read | - | - |
 | `/documents` | CRUD | CRUD | Create/Read | Read |
 | `/environmental/aspects` | CRUD | CRUD | Read | Read |
-| `/environmental/pma` | CRUD | CRUD | Read | - |
-| `/environmental/anla` | CRUD | CRUD | - | - |
+| `/environmental/pma` | CRUD | CRUD | Read | Read |
+| `/environmental/anla` | CRUD | CRUD | Read | Read |
+| `/sites` | CRUD | CRUD | Read | Read |
+| `/waste` | CRUD | CRUD | Crea/Lee | Read |
+| `/inspections` | CRUD | CRUD | Crea/Lee | Read |
+| `/alerts` | CRUD | CRUD | Crea/Lee | Read |
+| `/carbon-footprint` | CRUD | CRUD | Read | Read |
+| `/storage` | Upload | Upload | - | - |
 
-### ✅ Fixes de Seguridad
+> **Enforcement**: RolesGuard es `APP_GUARD` global. `AUDITOR` solo GET — cualquier mutación retorna `403`. Rutas sin token (auth, health) usan `@Public()`.
+
+### ✅ Fixes de Seguridad Implementados
 - **Self-role-assignment**: Registro ya no permite asignar rol — siempre `USER`
-- **JWT secrets**: Ahora usa `ConfigService.getOrThrow()` en lugar de `process.env` directo
+- **JWT secrets**: Usa `ConfigService.getOrThrow()` en lugar de `process.env` directo
 - **Users update**: Pasa `@Body()` correctamente en vez de objeto vacío
+- **Logout**: Revoca solo el refresh token presentado (no todos los del usuario)
+- **DATABASE_URL**: Resuelto via `ConfigService` con fail-fast en bootstrap
+- **Role literals**: Todos los `@Roles()` usan enum `Role` de `@prisma/client`
+- **AUDITOR enforcement**: El guard global bloquea cualquier mutación por `AUDITOR` (solo GET)
 
 ---
 
 ## Testing
 
-### Cobertura Backend (42 tests unitarios + 14 e2e)
+### Cobertura Backend (72 tests unitarios + 24 e2e)
 
-| Servicio | Tests | Coverage Stmts |
-|----------|-------|----------------|
-| `auth.service.ts` | 8 | 98% |
-| `documents.service.ts` | 10 | 100% |
-| `environmental.service.ts` | 12 | 97% |
-| `users.service.ts` | 6 | 100% |
+| Suite | Tests | Coverage Stmts |
+|-------|-------|----------------|
+| `auth.service.spec.ts` | 8 | 98% |
+| `documents.service.spec.ts` | 10 | 100% |
+| `environmental.service.spec.ts` | 12 | 97% |
+| `users.service.spec.ts` | 6 | 100% |
+| `storage.service.spec.ts` | 8 | 75% |
+| `pdf.service.spec.ts` | 10 | 85% |
+| `prisma.service.spec.ts` | 4 | 100% |
+| `roles.guard.spec.ts` | 8 | 100% |
 | `app.controller.spec.ts` | 6 | 100% |
-| **E2E** | 14 | - |
+| **E2E** (`app.e2e-spec.ts`) | 14 | - |
+| **E2E** (`rbac.e2e-spec.ts`) | 10 | - |
 
 **Ejecutar tests:**
 ```bash
 cd backend
 npx jest --coverage
-# 42 passed, 33% global (controllers/DTOs sin tests)
+# 72 passed, coverage por servicio 75-100%
 ```
 
-### Frontend (12 tests)
+### Frontend (19 tests)
 
 | Suite | Tests |
 |-------|-------|
 | `authStore.test.ts` | 4 |
-| `api.test.ts` | 2 |
-| `services.test.ts` | 6 |
+| `api.test.ts` | 4 |
+| `services.test.ts` | 7 |
+| `navigation.test.ts` | 4 |
 
 **Ejecutar tests:**
 ```bash
 cd Frontend
 npx vitest run
-# 12 passed
+# 19 passed
 ```
 
-### Bugs Corregidos durante Testing
+### Bugs Corregidos durante Estabilización
 - `AspectForm.tsx`: import `react-form` → `react-hook-form`
 - `AspectForm.tsx`: `z.enum` con `required_error` (Zod v4) → `message`
 - `tenant.middleware.ts`: header hardcodeado → usa `DEFAULT_TENANT_HEADER` del `.env`
 - `users.controller.ts`: update body pasado como `{}` → `@Body() updateUserDto`
+- `auth.service.ts`: logout revocaba todos los tokens del usuario → revoca solo el token presentado
+- `prisma.service.ts`: `DATABASE_URL` de `process.env` directo → `ConfigService.getOrThrow()`
+- `vitest.setup.ts`: mock de `localStorage` para tests de Zustand/persist en jsdom
+- `sites.controller.ts`: dependencias `multer` y `@types/multer` no instaladas → instaladas
+- `@Roles()` con strings literales → migrados a `Role` enum
+- Duplicate route `dashboard/waste` → consolidado bajo `dashboard/environmental/waste`
 
 ---
 
@@ -204,14 +236,17 @@ SAI/
 │   │   └── modules/
 │   │       ├── auth/            # Autenticación JWT + RBAC
 │   │       ├── users/           # CRUD usuarios
-│   │       ├── documents/       # Gestión documental
+│   │       ├── documents/       # Gestión documental (S3/MinIO)
 │   │       ├── environmental/   # Módulo ambiental ISO 14001
-│   │       ├── quality/         # Módulo 3: Calidad (Fase 4)
-│   │       ├── education/       # Módulo 4: LMS (Fase 4)
-│   │       ├── dashboard/       # Módulo 5: Dashboard (Fase 5)
-│   │       └── automation/      # Módulo 6: Automatización (Fase 5)
+│   │       ├── sites/           # Sitios y certificados
+│   │       ├── storage/         # StorageService (S3/MinIO + fallback)
+│   │       ├── waste/           # Registro de residuos
+│   │       ├── inspections/     # Inspecciones y hallazgos
+│   │       ├── alerts/          # Alertas y notificaciones
+│   │       ├── carbon-footprint/# Huella de carbono
+│   │       └── automation/      # PDF y automatización (BullMQ)
 │   ├── prisma/
-│   │   └── schema.prisma        # Esquema de base de datos (15+ modelos)
+│   │   └── schema.prisma        # Esquema de base de datos (28 modelos)
 │   ├── docker-compose.yml       # Infraestructura local
 │   ├── Dockerfile               # Imagen para producción
 │   ├── DOKPLOY.md              # Guía de despliegue
@@ -228,9 +263,10 @@ SAI/
 │   │   │   └── dashboard/      # Rutas del dashboard
 │   │   │       ├── documents/
 │   │   │       ├── environmental/
-│   │   │       ├── quality/    (Fase 4)
-│   │   │       ├── education/  (Fase 4)
-│   │   │       └── indicators/ (Fase 5)
+│   │   │       ├── quality/      ✅
+│   │   │       ├── education/    ✅
+│   │   │       ├── indicators/   ✅
+│   │   │       └── alerts/       ✅
 │   │   ├── components/
 │   │   │   ├── environmental/   # Componentes módulo ambiental
 │   │   │   └── ui/            # Componentes reutilizables
@@ -328,13 +364,15 @@ DELETE /api/v1/users/:id    # Eliminar usuario
 
 #### Documentos (Auth + RBAC)
 ```
-POST   /api/v1/documents           # Crear (USER+)
-GET    /api/v1/documents           # Listar (todos)
-GET    /api/v1/documents/:id       # Ver detalle
-PATCH  /api/v1/documents/:id       # Actualizar (MANAGER+)
-DELETE /api/v1/documents/:id       # Eliminar (ADMIN)
-POST   /api/v1/documents/:id/versions    # Agregar versión (MANAGER+)
-POST   /api/v1/documents/:id/approve     # Aprobar/Rechazar (MANAGER+)
+POST   /api/v1/documents                # Crear con upload (USER+)
+GET    /api/v1/documents                # Listar (todos)
+GET    /api/v1/documents/:id            # Ver detalle
+GET    /api/v1/documents/:id/download   # Descargar archivo
+GET    /api/v1/documents/:id/download-url # URL presigned (15 min TTL)
+PATCH  /api/v1/documents/:id            # Actualizar (MANAGER+)
+DELETE /api/v1/documents/:id            # Eliminar (ADMIN)
+POST   /api/v1/documents/:id/versions   # Agregar versión con archivo (MANAGER+)
+POST   /api/v1/documents/:id/approve    # Aprobar/Rechazar (MANAGER+)
 ```
 
 #### Ambiental (Auth + RBAC)
@@ -350,14 +388,46 @@ DELETE /api/v1/environmental/aspects/:id # Eliminar (ADMIN)
 POST /api/v1/environmental/pma # Crear (MANAGER+)
 GET /api/v1/environmental/pma # Listar (todos)
 POST /api/v1/environmental/pma/:id/generate-pdf # Generar PDF async (MANAGER+)
-GET /api/v1/environmental/pma/:id/pdf # Obtener URL del PDF generado
-GET /api/v1/environmental/jobs/:jobId # Estado del job de generación
+GET /api/v1/environmental/pma/:id/pdf # URL presigned del PDF generado
+GET /api/v1/environmental/jobs/:jobId # Estado del job BullMQ
 
 # ANLA
 POST /api/v1/environmental/anla # Crear (MANAGER+)
 GET /api/v1/environmental/anla # Listar (todos)
-POST /api/v1/environmental/anla/:id/generate-pdf # Generar PDF async (MANAGER+)
-GET /api/v1/environmental/anla/:id/pdf # Obtener URL del PDF generado
+
+# Residuos
+POST   /api/v1/waste                   # Crear registro (USER+)
+GET    /api/v1/waste                   # Listar (todos)
+GET    /api/v1/waste/:id               # Ver detalle
+PATCH  /api/v1/waste/:id               # Actualizar (MANAGER+)
+DELETE /api/v1/waste/:id               # Eliminar (ADMIN)
+
+# Inspecciones
+POST   /api/v1/inspections             # Crear (MANAGER+)
+GET    /api/v1/inspections             # Listar (todos)
+GET    /api/v1/inspections/:id         # Ver detalle
+PATCH  /api/v1/inspections/:id         # Actualizar (MANAGER+)
+DELETE /api/v1/inspections/:id         # Eliminar (ADMIN)
+
+# Sitios
+POST   /api/v1/sites                   # Crear (MANAGER+)
+GET    /api/v1/sites                   # Listar (todos)
+GET    /api/v1/sites/:id               # Ver detalle
+PATCH  /api/v1/sites/:id               # Actualizar (MANAGER+)
+DELETE /api/v1/sites/:id               # Eliminar (ADMIN)
+
+# Huella de Carbono
+POST   /api/v1/carbon-footprint        # Crear (MANAGER+)
+GET    /api/v1/carbon-footprint        # Listar (todos)
+GET    /api/v1/carbon-footprint/:id    # Ver detalle
+PATCH  /api/v1/carbon-footprint/:id    # Actualizar (MANAGER+)
+DELETE /api/v1/carbon-footprint/:id    # Eliminar (ADMIN)
+
+# Alertas
+POST   /api/v1/alerts                  # Crear (USER+)
+GET    /api/v1/alerts                  # Listar (todos)
+PATCH  /api/v1/alerts/:id              # Actualizar (MANAGER+)
+DELETE /api/v1/alerts/:id              # Eliminar (MANAGER+)
 ```
 
 ---
@@ -366,23 +436,21 @@ GET /api/v1/environmental/anla/:id/pdf # Obtener URL del PDF generado
 
 ### Fase 2 - Núcleo Ambiental (Prioridad: ALTA)
 
-1. **Automatización de Documentos**
-   - [ ] Cola de tareas con BullMQ + Redis
-   - [ ] Generación asíncrona de PDFs (Puppeteer)
-   - [ ] Plantillas Word (docxtemplater)
-   - [ ] Notificaciones por email (Nodemailer)
-
-2. **Huella de Carbono**
+1. **Huella de Carbono**
    - [ ] Microservicio FastAPI/Python
    - [ ] Cálculos Scope 1, 2, 3
    - [ ] Gráficas de tendencia
 
+2. **Mejora de Tests**
+   - [ ] Coverage de controladores y DTOs
+   - [ ] Tests de integración end-to-end completos
+   - [ ] Coverage target: 60% global
+
 3. **Cronograma ANLA**
-   - [ ] Alertas automátas por email
+   - [ ] Alertas automáticas por email (Nodemailer)
    - [ ] Reportes exportables
 
 ### Fase 3 - App Móvil
-
 - [ ] Flutter + API NestJS
 - [ ] Offline-first (Drift/SQLite)
 - [ ] Geolocalización + Cámara
@@ -450,12 +518,14 @@ GET /api/v1/environmental/anla/:id/pdf # Obtener URL del PDF generado
 ## Multi-Tenant
 
 Cada organización tiene:
-- Schema aislado en PostgreSQL
+- Datos aislados por `organizationId` en todas las consultas (tenant isolation)
 - Usuarios propios
-- Documentos y datos independientes
+- Documentos y archivos en S3 bajo `tenants/<organizationId>/`
 - Identificación por:
   - Header: `X-Tenant-ID` (configurable via `DEFAULT_TENANT_HEADER`)
   - Subdominio: `empresa.sai.co`
+- `@CurrentTenant()` decorator inyecta la organización resuelta en cada controlador
+- Cross-tenant access retorna `404` (no `403`) para no filtrar existencia
 
 ---
 
@@ -467,4 +537,4 @@ Fecha: Abril 2026
 
 ---
 
-> ⚠️ **Nota**: El proyecto cuenta con 54 tests automatizados (42 backend + 12 frontend + 14 e2e). Antes de hacer cambios importantes, ejecuta los tests para verificar que no se rompa funcionalidad existente.
+> ⚠️ **Nota**: El proyecto cuenta con 113 tests automatizados pasando (72 backend unitarios + 19 frontend + 22 e2e). Antes de hacer cambios importantes, ejecuta los tests para verificar que no se rompa funcionalidad existente. Los tests e2e requieren PostgreSQL y Redis corriendo (usa `docker compose up -d` en `backend/`).
