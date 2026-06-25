@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { LogOut, Menu, X } from 'lucide-react';
 import { useState } from 'react';
-import { navigation, filterNavigationByRole } from '@/lib/navigation';
+import { navigation, filterNavigationByRole, Role } from '@/lib/navigation';
 
 export default function DashboardLayout({
   children,
@@ -18,7 +18,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const { user, isAuthenticated, isInitialized, logout } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const visibleNavigation = filterNavigationByRole(navigation, user?.role);
+  const visibleNavigation = filterNavigationByRole(navigation, user?.role as Role | undefined);
 
   useEffect(() => {
     if (isInitialized && !isAuthenticated) {
