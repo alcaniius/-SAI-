@@ -27,25 +27,6 @@ services:
       retries: 5
 
   # ============================================
-  # REDIS - Caché y Colas
-  # ============================================
-  
-  redis:
-    image: redis:7-alpine
-    container_name: sai-redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    networks:
-      - sai-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # ============================================
   # MINIO - Almacenamiento S3
   # ============================================
   
@@ -88,8 +69,6 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-super_secret_refresh_key_sai_2026_change_in_production}
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minio_admin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minio_password_2026}
@@ -101,8 +80,6 @@ services:
       - "3001:3001"
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     networks:
       - sai-network
@@ -141,7 +118,6 @@ services:
 
 volumes:
   postgres_data:
-  redis_data:
   minio_data:
 
 # ============================================
