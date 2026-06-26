@@ -78,24 +78,60 @@ export default function DashboardLayout({
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 overflow-y-auto">
-            {visibleNavigation.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center px-4 py-3 mb-2 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <item.icon className="w-5 h-5 mr-3" />
-                  <span className="font-medium">{item.name}</span>
-                </Link>
-              );
-            })}
+            {/* Modules section */}
+            {visibleNavigation.filter(i => i.section === 'modules').length > 0 && (
+              <>
+                <div className="px-4 mb-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Módulos</p>
+                </div>
+                {visibleNavigation.filter(i => i.section === 'modules').map((item) => {
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`flex items-center px-4 py-3 mb-1 rounded-lg transition-colors ${
+                        isActive
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      <item.icon className="w-5 h-5 mr-3 flex-shrink-0" />
+                      <span className="font-medium">{item.name}</span>
+                    </Link>
+                  );
+                })}
+              </>
+            )}
+
+            {/* Admin section */}
+            {visibleNavigation.filter(i => i.section === 'admin').length > 0 && (
+              <>
+                <div className="border-t border-gray-200 my-4" />
+                <div className="px-4 mb-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Administración</p>
+                </div>
+                {visibleNavigation.filter(i => i.section === 'admin').map((item) => {
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`flex items-center px-4 py-3 mb-1 rounded-lg transition-colors ${
+                        isActive
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      <item.icon className="w-5 h-5 mr-3 flex-shrink-0" />
+                      <span className="font-medium">{item.name}</span>
+                    </Link>
+                  );
+                })}
+              </>
+            )}
           </nav>
 
           {/* User section */}
