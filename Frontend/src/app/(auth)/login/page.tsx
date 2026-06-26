@@ -51,7 +51,11 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
       <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">SAI</h1>
+          <img
+            src="/logo.svg"
+            alt="SAI - Sistema Ambiental Integrado"
+            className="h-12 w-auto mx-auto"
+          />
           <p className="text-gray-600 mt-2">Sistema Ambiental Integrado</p>
         </div>
 
