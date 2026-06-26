@@ -7,7 +7,7 @@
 - Infraestructura: Redis 7, MinIO (S3), PostgreSQL
 - Dockerfile backend: pnpm prisma migrate deploy && node dist/main.js
 - docker-compose.yml en raíz del proyecto
-- Despliegue: Dokploy en WSL (Ubuntu). Git repo: github.com/AgrojuradoIT/SAI
+- Despliegue: Dokploy en WSL (Ubuntu). Git repo: github.com/alcaniius/-SAI-
 - Prisma v7: requiere driver adapter (PrismaPg), NO permite url directa en schema.prisma
 - Multi-tenant (schema-per-organization)
 - Puerto backend: 3001, Frontend: 3002, MinIO: 9000/9001
