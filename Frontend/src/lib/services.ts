@@ -13,20 +13,43 @@ export interface RegisterInput {
   organizationId?: string;
 }
 
-export type DocType = 'PMA' | 'MATRIX' | 'PROCEDURE' | 'INSTRUCTION' | 'REPORT' | 'CERTIFICATE' | 'OTHER';
+export type DocCategory = 'GUIDE' | 'CHECKLIST_TEMPLATE' | 'DATA_FORMAT' | 'CERTIFICATE' | 'REPORT';
+export type DocType = 'PLAN' | 'PROGRAM' | 'PROTOCOL' | 'INSTRUCTIVE' | 'MATRIX' | 'FORMAT' | 'CHECKLIST' | 'REPORT' | 'CERTIFICATE' | 'DATA_SHEET' | 'INDICATOR' | 'SCHEDULE' | 'OTHER';
 export type DocStatus = 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'REJECTED' | 'ARCHIVED';
+
+export interface EnvironmentalProgram {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  organizationId?: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    documents: number;
+    templates: number;
+  };
+  documents?: Document[];
+  templates?: InspectionTemplate[];
+}
 
 export interface Document {
   id: string;
   title: string;
   description?: string;
+  code?: string;
   type: DocType;
+  category: DocCategory;
   status: DocStatus;
   version: number;
   filePath?: string;
   fileFormat?: string;
   fileSize?: number;
   dueDate?: string;
+  programId?: string;
+  program?: { name: string; code: string };
+  linkedTemplateId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -34,8 +57,12 @@ export interface Document {
 export interface CreateDocumentInput {
   title: string;
   description?: string;
+  code?: string;
   type: DocType;
+  category?: DocCategory;
   dueDate?: string;
+  programId?: string;
+  linkedTemplateId?: string;
   file?: File;
 }
 
@@ -107,6 +134,10 @@ export const documentsService = {
     formData.append('title', data.title);
     formData.append('type', data.type);
     if (data.description) formData.append('description', data.description);
+    if (data.code) formData.append('code', data.code);
+    if (data.category) formData.append('category', data.category);
+    if (data.programId) formData.append('programId', data.programId);
+    if (data.linkedTemplateId) formData.append('linkedTemplateId', data.linkedTemplateId);
     if (data.dueDate) formData.append('dueDate', data.dueDate);
     if (data.file) formData.append('file', data.file);
 
@@ -295,5 +326,31 @@ export const environmentalService = {
   createANLAReport: async (data: any) => {
     const response = await api.post('/environmental/anla', data);
     return response.data;
+  },
+};
+
+export const programsService = {
+  async getAll(): Promise<EnvironmentalProgram[]> {
+    const response = await api.get('/programs');
+    return response.data;
+  },
+
+  async getById(id: string): Promise<EnvironmentalProgram> {
+    const response = await api.get(`/programs/${id}`);
+    return response.data;
+  },
+
+  async create(data: Partial<EnvironmentalProgram>): Promise<EnvironmentalProgram> {
+    const response = await api.post('/programs', data);
+    return response.data;
+  },
+  
+  async update(id: string, data: Partial<EnvironmentalProgram>): Promise<EnvironmentalProgram> {
+    const response = await api.patch(`/programs/${id}`, data);
+    return response.data;
+  },
+  
+  async delete(id: string): Promise<void> {
+    await api.delete(`/programs/${id}`);
   },
 };
