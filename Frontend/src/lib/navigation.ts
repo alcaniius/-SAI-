@@ -7,7 +7,6 @@ import {
   BarChart3,
   Users,
   Building2,
-  MapPin,
   LucideIcon,
 } from 'lucide-react';
 
@@ -35,7 +34,7 @@ export const navigation: NavigationItem[] = [
   { name: 'Indicadores', href: '/dashboard/indicators', icon: BarChart3, roles: [Role.MANAGER, Role.ADMIN, Role.AUDITOR], section: 'modules' },
   { name: 'Usuarios', href: '/dashboard/admin/usuarios', icon: Users, roles: [Role.ADMIN], section: 'admin' },
   { name: 'Organizaciones', href: '/dashboard/admin/organizaciones', icon: Building2, roles: [Role.ADMIN], section: 'admin' },
-  { name: 'Sedes', href: '/dashboard/admin/sedes', icon: MapPin, roles: [Role.ADMIN], section: 'admin' },
+
 ];
 
 export function filterNavigationByRole(items: NavigationItem[], role?: Role): NavigationItem[] {

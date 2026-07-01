@@ -200,6 +200,24 @@ export const sitesService = {
     const response = await api.get('/sites');
     return response.data;
   },
+  getByOrg: async (orgId: string): Promise<Site[]> => {
+    const response = await api.get('/sites', {
+      params: { organizationId: orgId },
+      headers: { 'X-Tenant-ID': orgId },
+    });
+    return response.data;
+  },
+  create: async (data: any): Promise<Site> => {
+    const response = await api.post('/sites', data);
+    return response.data;
+  },
+  update: async (id: string, data: any): Promise<Site> => {
+    const response = await api.put(`/sites/${id}`, data);
+    return response.data;
+  },
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/sites/${id}`);
+  },
 };
 
 export interface WasteRecord {

@@ -99,4 +99,24 @@ export function fetchSitesByOrg(orgId: string) {
   return api.get('/sites', { params: { organizationId: orgId } });
 }
 
+export function createSite(data: any) {
+  return api.post('/sites', data);
+}
+
+export function updateSite(id: string, data: any) {
+  return api.put(`/sites/${id}`, data);
+}
+
+export function deleteSite(id: string) {
+  return api.delete(`/sites/${id}`);
+}
+
+export function fetchProfile() {
+  return api.get('/users/me');
+}
+
+export function updateProfile(data: any) {
+  return api.patch('/users/me', data);
+}
+
 export default api;
